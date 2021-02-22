@@ -1,0 +1,25 @@
+{
+  "solid": {
+    "name": "test",
+    "vertex data": [{
+      "id": "A",
+      "x": 3,
+      "y": 2,
+      "z": 1
+    }, {
+      "id": "B",
+      "x": 4,
+      "y": 4,
+      "z": 2
+    }, {
+      "id": "C",
+      "x": 1,
+      "y": 3,
+      "z": 2
+    }],
+    "faces": [{
+      "type": "triangle",
+      "vertices": ["A", "B", "C"]
+    }]
+  }
+}
