@@ -9,10 +9,10 @@ def normalise(x):
 
 class Facet:
     def __init__(self,vertices):
-	self.vertices = vertices
+        self.vertices = vertices
         self.normal = normalise(calculateNormal(vertices[0],vertices[1],vertices[2]));
     def toSTL(self):
-	out = ""
+        out = ""
         out = out + "facet normal "
         out = out + str(self.normal[0])+" "
         out = out + str(self.normal[1])+" "
