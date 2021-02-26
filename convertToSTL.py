@@ -63,7 +63,7 @@ def loadVertices( vertices ):
 
 def loadFaces( faces , globalVertices , localVertices ):
     count = 0
-    total = len(solid["faces"])
+    total = len(faces)
     facets=[]
     for face in faces:
         count=count+1
@@ -71,15 +71,14 @@ def loadFaces( faces , globalVertices , localVertices ):
         facets.extend( faceToFacet( face , globalVertices , localVertices ) )
     return facets
 
-with open('test.json') as json_file:
-    data = json.load(json_file)
-    print("file has been read")
-    solid = data["solid"]
-    print("loading")
-    globalVertices = loadVertices( solid["global vertices"] )
+def loadGlobalVariables(solid):
+    if "global vertices" in solid:
+        return loadVertices( solid["global vertices"] )
+    return []
 
-    facets=[]
+def loadComponents(solid,globalVertices):
     if( "components" in solid ):
+        facets=[]
         print("has components")
         print("loding components")
         count = 0
@@ -89,15 +88,39 @@ with open('test.json') as json_file:
             print("loading component " + component["name"] + "\n\t" + str(count) + " of "+ str(total))
             localVertices=loadVertices( component["vertices"] )
             facets.extend(loadFaces( component["faces"], globalVertices,localVertices ))
+        return facets
+    return []
 
-    print("loading faces")
-    facets.extend(loadFaces(solid["faces"],globalVertices,[]))
+def loadGlobalFaces(solid,globalVertices):
+    if "faces" in solid:
+        return loadFaces( solid["faces"],globalVertices,[] )
+    return []
 
-    print("creating stl")
-    file = open("test.stl","w")
+def loadSolid(solid):
+    globalVertices = loadGlobalVariables( solid )
+
+    facets=[]
+    facets.extend(loadComponents( solid , globalVertices ))
+    facets.extend(loadGlobalFaces(solid,globalVertices))
+
+    return facets
+
+def saveFacetsAsSTL( facets , solid , filename):
+    file = open(filename,"w")
     file.write("solid "+solid["name"]+"\n")
     for facet in facets:
         file.write(facet.toSTL())
     file.write("endsolid "+solid["name"]+"\n")
     file.close()
-    print("done")
+
+with open('test.json') as json_file:
+    try:
+        data = json.load(json_file)
+        print("file has been read")
+        print("loading")
+        facets=loadSolid(data["solid"]);
+        print("creating stl")
+        saveFacetsAsSTL( facets, data["solid"], "test.stl" )
+        print("done")
+    except ValueError as e:
+        print(e)
