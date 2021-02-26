@@ -6,7 +6,6 @@ def calculateNormal(a,b,c):
 
 def normalise(x):
     return x/np.linalg.norm(x)
-
 class Facet:
     def __init__(self,vertices):
         self.vertices = vertices
@@ -26,43 +25,73 @@ class Facet:
         out = out + "endfacet\n"
         return out
 
-with open('test.json') as json_file:
-    data = json.load(json_file)
-    print("file has been read")
-    solid = data["solid"]
-    print("loading")
-    vertices = dict()
+def findVertexById( id , localVertices , globalVertices ):
+    if id in localVertices:
+        return localVertices[id]
+    if id in globalVertices:
+        return globalVertices[id]
+    return None
+
+def faceToFacet(face,globalVertices,localVertices):
+    vs = face["vertices"];
+    if face["type"]=="triangle":
+        a = findVertexById(vs[0],globalVertices,localVertices)
+        b = findVertexById(vs[1],globalVertices,localVertices)
+        c = findVertexById(vs[2],globalVertices,localVertices)
+        return [Facet([a,b,c])]
+    if face["type"]=="quad":
+        a = findVertexById(vs[0],globalVertices,localVertices)
+        b = findVertexById(vs[1],globalVertices,localVertices)
+        c = findVertexById(vs[2],globalVertices,localVertices)
+        d = findVertexById(vs[3],globalVertices,localVertices)
+        return [Facet([a,b,c]),Facet([a,c,d])]
+    return []
+
+def loadVertices( vertices ):
+    out = dict()
     count = 0 ;
-    total = len(solid["vertex data"])
-    for vertex in solid["vertex data"]:
+    total = len(vertices)
+    for vertex in vertices:
         count=count+1
         print("loading vertex "+str(count) + " of " + str(total))
         id=vertex["id"]
         x=float(vertex["x"])
         y=float(vertex["y"])
         z=float(vertex["z"])
-        vertices[id]=[x,y,z]
+        out[id]=[x,y,z]
+    return out;
 
-    print("loading faces")
-    facets=[]
+def loadFaces( faces , globalVertices , localVertices ):
     count = 0
     total = len(solid["faces"])
-    for face in solid["faces"]:
+    facets=[]
+    for face in faces:
         count=count+1
         print("loading face " + str(count) +" of " +str(total))
-        vs = face["vertices"];
-        if face["type"]=="triangle":
-            a = vertices[vs[0]]
-            b = vertices[vs[1]]
-            c = vertices[vs[2]]
-            facets.append(Facet([a,b,c]))
-        if face["type"]=="quad":
-            a = vertices[vs[0]]
-            b = vertices[vs[1]]
-            c = vertices[vs[2]]
-            d = vertices[vs[3]]
-            facets.append(Facet([a,b,c]))
-            facets.append(Facet([a,c,d]))
+        facets.extend( faceToFacet( face , globalVertices , localVertices ) )
+    return facets
+
+with open('test.json') as json_file:
+    data = json.load(json_file)
+    print("file has been read")
+    solid = data["solid"]
+    print("loading")
+    globalVertices = loadVertices( solid["global vertices"] )
+
+    facets=[]
+    if( "components" in solid ):
+        print("has components")
+        print("loding components")
+        count = 0
+        total = len(solid["components"])
+        for component in solid["components"]:
+            count=count+1
+            print("loading component " + component["name"] + "\n\t" + str(count) + " of "+ str(total))
+            localVertices=loadVertices( component["vertices"] )
+            facets.extend(loadFaces( component["faces"], globalVertices,localVertices ))
+
+    print("loading faces")
+    facets.extend(loadFaces(solid["faces"],globalVertices,[]))
 
     print("creating stl")
     file = open("test.stl","w")
