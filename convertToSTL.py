@@ -71,7 +71,7 @@ def loadFaces( faces , globalVertices , localVertices ):
         facets.extend( faceToFacet( face , globalVertices , localVertices ) )
     return facets
 
-def loadGlobalVariables(solid):
+def loadGlobalVertices(solid):
     if "global vertices" in solid:
         return loadVertices( solid["global vertices"] )
     return []
@@ -86,7 +86,9 @@ def loadComponents(solid,globalVertices):
         for component in solid["components"]:
             count=count+1
             print("loading component " + component["name"] + "\n\t" + str(count) + " of "+ str(total))
-            localVertices=loadVertices( component["vertices"] )
+            localVertices=[]
+            if "vertices" in component :
+                localVertices = loadVertices( component["vertices"] )
             facets.extend(loadFaces( component["faces"], globalVertices,localVertices ))
         return facets
     return []
@@ -97,7 +99,7 @@ def loadGlobalFaces(solid,globalVertices):
     return []
 
 def loadSolid(solid):
-    globalVertices = loadGlobalVariables( solid )
+    globalVertices = loadGlobalVertices( solid )
 
     facets=[]
     facets.extend(loadComponents( solid , globalVertices ))
